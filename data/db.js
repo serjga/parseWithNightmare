@@ -4,10 +4,10 @@ module.exports = {
     param: function()
     {
         let obj = {};
-        obj['host'] = 'mysql.zzz.com.ua';
-        obj['database'] = 'investor_zzz_com_ua';        
-        obj['user'] = 'my_admin_bd';
-        obj['password'] = 'pobedonosez';
+        obj['host'] = '';
+        obj['database'] = '';        
+        obj['user'] = '';
+        obj['password'] = '';
 
         return obj;
     },
@@ -16,18 +16,11 @@ module.exports = {
     connect: function()
     {
         let mysql = require('mysql');
-        /*
-        let obj = {};
-        obj['host'] = 'mysql.zzz.com.ua';
-        obj['database'] = 'investor_zzz_com_ua';        
-        obj['user'] = 'my_admin_bd';
-        obj['password'] = 'pobedonosez';
-        */
         let connection = mysql.createConnection({
-            host: 'mysql.zzz.com.ua',
-            database: 'investor_zzz_com_ua',
-            user: 'my_admin_bd',
-            password: 'pobedonosez'
+            host: '',
+            database: '',
+            user: '',
+            password: ''
         });
 
         return connection;
