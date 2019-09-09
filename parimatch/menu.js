@@ -1,3 +1,28 @@
+"use strict";
+module.exports = {
+    getSportLeage : getSportLeage,
+};
+
+const set = require('../setting');
+let setObj = new set.Parimatch;
+
+const en_src = setObj.menu_en_src;
+const ru_src = setObj.menu_ru_src;
+
+const file = set.dirFile + setObj.name + '/' + setObj.table_leage + '.txt';
+const id_site = setObj.site_id;
+const table_name = setObj.table_leage;
+console.log(table_name);
+const tools = require('../script/tools');
+const today = tools.getDateFormateTimestamp();
+
+const data = require('../data');
+const file_mod = require('../script/file_mod');
+
+function getSportLeage() {
+    parseMenu(en_src);
+}
+
 function parseMenu(src) {
                
     const Nightmare = require('nightmare');    
@@ -58,27 +83,29 @@ function parseMenu(src) {
     })
     .end()
     .then(function(results) {
-
-        console.log(results['href']);
-        let fs = require("fs");
         
-        if(results.href === 'https://www.parimatch.com/en/') {
-
-            fs.writeFileSync("../yii2-app-advanced/parse/parimatch_sports.txt", JSON.stringify(results.result),  "utf8");
-
-            parseMenu('https://www.parimatch.com/');
+        if(results.href === en_src) {
+            // пишем данные английской страницы в файл
+            file_mod.saveInFile(file, results.result);
+            parseMenu(ru_src);
         }
         else {
-
-            let jsonString = fs.readFileSync("../yii2-app-advanced/parse/parimatch_sports.txt", "utf8");
-            let en_arr = JSON.parse(jsonString);
-
-            const tools = require('./tools');
+            // читаем объект из файла
+            let en_arr = file_mod.readFile(file);
+            let sports = [];
 
             for (let b = 0; b < en_arr.length; b++)
             {
                 // поиск русского названия для лиги
                 let leages_en = en_arr[b]['leages'];
+
+                // создаем новый объект для базы данных
+                let obj_sports = {};
+                obj_sports['ru_name'] = en_arr[b]['sport_name_ru'];
+                obj_sports['en_name'] = en_arr[b]['sport_name'];
+                obj_sports['site_id'] = id_site;
+
+                sports.push(obj_sports);                
 
                 for (let l = 0; l < leages_en.length; l++)
                 {
@@ -88,13 +115,32 @@ function parseMenu(src) {
                 en_arr[b]['leages'] = leages_en;
             }
 
-            console.log(en_arr[0]);
-            fs.writeFileSync("../yii2-app-advanced/parse/parimatch_sports.txt", JSON.stringify(en_arr),  "utf8");
+            // запись объекта в файл
+            file_mod.saveInFile(file, en_arr);
+
+            results['result'] = en_arr;
+            results['sports'] = sports;
+        }
+        return results;
+    })
+    // записываем в базу данных
+    .then(function(results) {
+        
+        if(results.href != en_src) {
+            // перебираем полученые виды спорта и сохраняем новые в базу данных
+            data.writeSportsInData(results.sports, id_site);
+        }
+
+        return results; 
+    })
+    .then(function(results) {
+        if(results.href != en_src) {
+            // перебираем массив полученных данных о лигах с видами спорта
+            data.writeLeagesInData(results.result, id_site, today, table_name);
         }
     })
     .catch(function(e)  {
+        console.log('ОШИБКА ВЫПОЛНЕНИЯ СКРИПТА :');
         console.log(e);
     });
 }
-
-parseMenu('https://www.parimatch.com/en/');
